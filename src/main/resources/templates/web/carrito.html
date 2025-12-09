@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Carrito de Compras</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        /* PALETA */
+        :root {
+            --brand-orange: #D97706; /* Naranja industrial */
+            --brand-dark: #1F2937;
+            --brand-checkout: #28a745; /* Verde fuerte para la acción final */
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f6f8;
+        }
+        .navbar-brand {
+            font-family: 'Roboto Condensed', sans-serif;
+            font-weight: 700;
+        }
+
+        /* CABECERA */
+        .carrito-header {
+            background-color: var(--brand-dark);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        /* TABLA Y TOTALES */
+        .table-custom th {
+            font-weight: 700;
+        }
+        .total-footer {
+            background-color: #f8f9fa;
+            font-size: 1.2rem;
+            border-top: 3px solid var(--brand-orange);
+        }
+
+        /* BOTONES */
+        .btn-update {
+            color: #17a2b8;
+            border-color: #17a2b8;
+        }
+
+        .btn-checkout {
+            background-color: var(--brand-checkout);
+            border-color: var(--brand-checkout);
+            transition: all 0.2s;
+            font-weight: bold;
+            padding: 10px 30px;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.5);
+        }
+        .btn-checkout:hover {
+            background-color: #1e7e34;
+            border-color: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/tienda}"><i class="bi bi-hammer"></i> El Yunque de Hierro</a>
+        <a th:href="@{/tienda}" class="btn btn-outline-light"><i class="bi bi-shop"></i> Seguir Comprando</a>
+    </div>
+</nav>
+
+<div class="carrito-header text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold"><i class="bi bi-cart4"></i> Tu Carrito de Compras</h1>
+        <p class="lead">Artículos listos para el pago. Total de unidades: <span th:text="${cantidadTotal}" class="fw-bold text-warning">0</span></p>
+    </div>
+</div>
+
+<div class="container my-5">
+
+    <div th:if="${carritoItems.isEmpty()}" class="alert alert-info text-center shadow-sm">
+        <h4 class="alert-heading"><i class="bi bi-info-circle"></i> ¡Tu carrito está vacío!</h4>
+        <p class="mb-0">Añade productos de la ferretería para comenzar tu pedido.</p>
+        <hr>
+        <a th:href="@{/tienda}" class="btn btn-outline-info fw-bold"><i class="bi bi-shop"></i> Ir al Catálogo</a>
+    </div>
+
+    <div th:unless="${carritoItems.isEmpty()}">
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-0">
+                <table class="table table-custom table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                    <tr>
+                        <th style="width: 40%;">Producto</th>
+                        <th style="width: 15%;">Precio Unit.</th>
+                        <th style="width: 15%;">Cantidad</th>
+                        <th style="width: 20%;">Subtotal</th>
+                        <th style="width: 10%;">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="item : ${carritoItems}">
+                        <td th:text="${item.nombreProducto}" class="fw-bold"></td>
+                        <td th:text="${#numbers.formatCurrency(item.precioUnitario)}"></td>
+
+                        <td>
+                            <form th:action="@{/carrito/actualizar}" method="post" class="d-flex align-items-center">
+                                <input type="hidden" name="productoId" th:value="${item.productoId}">
+                                <input type="number" name="cantidad" th:value="${item.cantidad}" min="1"
+                                       class="form-control form-control-sm me-2" style="max-width: 70px;" required>
+
+                                <button type="submit" class="btn btn-sm btn-outline-secondary btn-update" title="Actualizar">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </form>
+                        </td>
+
+                        <td th:text="${#numbers.formatCurrency(item.subtotal)}" class="fw-bolder text-dark"></td>
+                        <td>
+                            <form th:action="@{/carrito/remover/{id}(id=${item.productoId})}" method="post">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash3-fill"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                    <tfoot>
+                    <tr class="total-footer fw-bold">
+                        <td colspan="3" class="text-end text-dark">Total a Pagar:</td>
+                        <td th:text="${#numbers.formatCurrency(totalCarrito)}" class="fw-bolder text-danger fs-4"></td>
+                        <td></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 p-3 bg-white shadow-lg rounded">
+
+            <div>
+                <a th:href="@{/carrito/limpiar}" class="btn btn-outline-danger me-3"><i class="bi bi-trash"></i> Vaciar Todo</a>
+                <a th:href="@{/tienda}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Seguir Comprando</a>
+            </div>
+
+            <div sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="btn btn-checkout btn-lg text-white">
+                    <i class="bi bi-person-circle"></i> INICIAR SESIÓN PARA PAGAR
+                </a>
+            </div>
+
+            <div sec:authorize="isAuthenticated()">
+                <form th:action="@{/checkout}" method="get">
+                    <button type="submit" class="btn btn-checkout btn-lg text-white">
+                        <i class="bi bi-lock-fill"></i> PROCEDER AL PAGO
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

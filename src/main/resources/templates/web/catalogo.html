@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo | Ferretería Online</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        /* BASE Y TIPOGRAFÍA */
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f6f8; }
+        .navbar-brand { font-family: 'Roboto Condensed', sans-serif; font-weight: 700; }
+
+        /* CABECERA (HERO) */
+        .header-section {
+            background-color: #343a40;
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+
+        /* TARJETAS DE PRODUCTO */
+        .product-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e9ecef;
+            border-radius: 0.75rem;
+            min-height: 380px;
+            text-align: center;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.8rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        /* IMAGEN */
+        .image-container {
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            background-color: #fff;
+        }
+
+        .product-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        /* PRECIO Y STOCK */
+        .price-display {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #D97706;
+        }
+
+        .stock-count {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        /* BOTÓN CARRITO */
+        .btn-add-to-cart {
+            background-color: #17a2b8;
+            border-color: #17a2b8;
+            font-weight: 600;
+        }
+        .btn-add-to-cart:hover {
+            background-color: #138496;
+            border-color: #138496;
+        }
+
+        /* ALERTA DE STOCK BAJO */
+        .stock-warning {
+            background-color: #ffe0e3;
+            color: #c82333;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/}"><i class="bi bi-hammer"></i> El Yunque de Hierro</a>
+        <div class="d-flex">
+
+            <a th:href="@{/carrito}" class="btn btn-warning me-3 fw-bold position-relative">
+                <i class="bi bi-cart"></i> Carrito
+
+                <span th:if="${session.cartCount != null and session.cartCount > 0}"
+                      th:text="${session.cartCount}"
+                      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                      0
+                    <span class="visually-hidden">artículos en carrito</span>
+                </span>
+            </a>
+
+            <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
+
+                <a th:href="@{/mi-cuenta/compras}" class="btn btn-outline-info me-2 fw-bold">
+                    <i class="bi bi-clock-history"></i> Mis Compras
+                </a>
+
+                <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
+
+                    <a th:href="@{/mi-cuenta/perfil}" class="btn btn-outline-info me-2 fw-bold">
+                        <i class="bi bi-person-circle"></i> Mi Cuenta
+                    </a>
+
+                </div>
+
+                <div sec:authorize="isAuthenticated()" class="d-flex align-items-center">
+                    <form th:action="@{/logout}" method="post" class="d-inline-flex">
+                        <button type="submit" class="btn btn-outline-danger me-2">
+                            <i class="bi bi-box-arrow-right"></i> Salir
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <a sec:authorize="!isAuthenticated()" th:href="@{/login}" class="btn btn-outline-light fw-bold">
+                Acceder/Registro
+            </a>
+
+        </div>
+    </div>
+</nav>
+
+<div class="header-section text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold"><i class="bi bi-tools"></i> Catálogo de Productos</h1>
+        <p class="lead">Todo lo que necesitas para tu proyecto, con stock verificado.</p>
+    </div>
+</div>
+
+<div class="container my-5">
+
+    <div th:if="${mensajeCarritoExito}" class="alert alert-success alert-dismissible fade show text-center" role="alert">
+        <i class="bi bi-check-circle-fill"></i> <span th:text="${mensajeCarritoExito}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${errorCarrito}" class="alert alert-danger alert-dismissible fade show text-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill"></i> <span th:text="${errorCarrito}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${productos.isEmpty()}" class="alert alert-warning text-center">
+        Lo sentimos, no hay productos disponibles en este momento.
+    </div>
+
+    <div class="row g-4">
+        <div th:each="producto : ${productos}" class="col-xl-3 col-lg-4 col-md-6 col-sm-6">
+            <div class="card product-card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title fw-bold text-truncate" th:text="${producto.nombre}">Tornillo Universal</h5>
+                    <p class="card-text text-muted small" th:text="${producto.categoriaNombre}">Categoría</p>
+
+                    <div class="image-container">
+                        <img th:if="${producto.imageUrl}"
+                             th:src="@{/uploaded-products} + ${producto.imageUrl}"
+                             th:alt="${producto.nombre}"
+                             class="product-image"/>
+
+                        <i th:unless="${producto.imageUrl}"
+                           class="bi bi-box-seam"
+                           style="font-size: 3rem; color: #ced4da;"></i>
+                    </div>
+                    <div class="mt-auto mb-3">
+                        <span class="price-display d-block" th:text="${#numbers.formatCurrency(producto.precio)}">$10.00</span>
+
+                        <p class="stock-count mt-1 mb-2">
+                            <span class="fw-bold" th:text="${producto.stock}">50</span> en stock
+                        </p>
+
+                        <div th:if="${producto.stock le 10}" class="stock-warning mt-2">
+                            <i class="bi bi-exclamation-triangle-fill"></i> ¡Stock Bajo!
+                        </div>
+                    </div>
+
+                    <form th:action="@{/carrito/agregar}" method="post">
+                        <input type="hidden" name="productoId" th:value="${producto.id}">
+
+                        <div class="input-group">
+                            <input type="number" name="cantidad" value="1" min="1"
+                                   th:max="${producto.stock}" class="form-control" style="max-width: 80px;" required>
+
+                            <button type="submit"
+                                    class="btn btn-add-to-cart text-white flex-grow-1"
+                                    th:disabled="${producto.stock le 0}"> <i class="bi bi-cart-plus"></i>
+                                <span th:if="${producto.stock > 0}">Añadir</span>
+                                <span th:unless="${producto.stock > 0}">Sin Stock</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Nueva Venta</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        body { background-color: #f4f6f8; }
+        .btn-primary-custom { background-color: #D97706; border-color: #D97706; }
+        .btn-primary-custom:hover { background-color: #B45309; border-color: #B45309; }
+        #lista-productos-venta .btn-danger { line-height: 1; padding: 0.25rem 0.5rem; }
+        .auditoria-panel { font-size: 0.9rem; padding: 15px; }
+        .total-display { color: #155724; } /* Verde oscuro para el total */
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand" th:href="@{/vendedor/index}"><i class="bi bi-person-workspace"></i> Panel del Vendedor</a>
+    </div>
+</nav>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-6 fw-bold"><i class="bi bi-cart-plus"></i> Registrar Nueva Venta</h1>
+        <a th:href="@{/vendedor/index}" class="btn btn-secondary"><i class="bi bi-arrow-left-circle"></i> Volver al Panel</a>
+    </div>
+
+    <div class="alert alert-info border-start border-4 border-info shadow-sm auditoria-panel mb-4" role="alert">
+        <p class="mb-0 fw-bold"><i class="bi bi-clipboard-check"></i> Auditoría de Stock:</p>
+        <p class="mb-0 small text-muted">Cada producto añadido y registrado descuenta automáticamente el inventario. Usted es responsable de la exactitud de la **salida de stock**.</p>
+    </div>
+
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white"><h5><i class="bi bi-funnel"></i> Añadir Productos</h5></div>
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label for="producto-selector" class="form-label">Buscar Producto</label>
+                            <select id="producto-selector" class="form-select">
+                                <option value="" disabled selected>Selecciona un producto...</option>
+                                <option th:each="p : ${productos}"
+                                        th:value="${p.id}"
+                                        th:text="${p.nombre} + ' - Stock: ' + ${p.stock}"
+                                        th:attr="data-precio=${p.precio}, data-stock=${p.stock}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="cantidad" class="form-label">Cantidad</label>
+                            <input type="number" id="cantidad" class="form-control" value="1" min="1">
+                        </div>
+                        <div class="col-md-2">
+                            <button id="btn-agregar" class="btn btn-primary-custom w-100 fw-bold">Añadir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header"><h5><i class="bi bi-list-check"></i> Productos en la Venta</h5></div>
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark"><tr><th>Producto</th><th>Cantidad</th><th>Precio Unit.</th><th>Subtotal</th><th></th></tr></thead>
+                        <tbody id="lista-productos-venta">
+                        </tbody>
+                        <tfoot>
+                        <tr class="fw-bold bg-light">
+                            <td colspan="3" class="text-end">Total Venta:</td>
+                            <td id="subtotal-display" class="total-display fw-bolder"></td>
+                            <td></td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-lg sticky-top" style="top: 20px;">
+                <div class="card-header bg-dark text-white"><h5><i class="bi bi-calculator"></i> Resumen y Finalizar</h5></div>
+                <div class="card-body text-center">
+                    <h2 class="display-5 fw-bold total-display" id="total-venta">$0.00</h2>
+                    <p class="text-muted">Total a Pagar</p>
+                    <div class="d-grid gap-2">
+                        <button id="btn-finalizar-venta" class="btn btn-success btn-lg fw-bold" disabled><i class="bi bi-check-circle"></i> Registrar Venta</button>
+                        <button id="btn-cancelar-venta" class="btn btn-danger"><i class="bi bi-x-circle"></i> Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="pagoModal" tabindex="-1" aria-labelledby="pagoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="pagoModalLabel"><i class="bi bi-wallet2"></i> Procesar Pago</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h3 class="fw-bold">Total a Cobrar: <span id="montoTotalCobrar" class="total-display"></span></h3>
+                <input type="hidden" id="totalVentaValor" value="0.00">
+                <ul class="nav nav-tabs mt-3" id="pagoTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="efectivo-tab" data-bs-toggle="tab" data-bs-target="#efectivo-pane" type="button" role="tab" aria-controls="efectivo-pane" aria-selected="true">Efectivo</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tarjeta-tab" data-bs-toggle="tab" data-bs-target="#tarjeta-pane" type="button" role="tab" aria-controls="tarjeta-pane" aria-selected="false">Tarjeta (Sim.)</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content pt-3" id="pagoTabsContent">
+
+                    <div class="tab-pane fade show active" id="efectivo-pane" role="tabpanel" aria-labelledby="efectivo-tab" tabindex="0">
+                        <form id="formEfectivo">
+                            <div class="mb-3">
+                                <label for="montoRecibido" class="form-label fw-bold">Efectivo Recibido</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-lg" id="montoRecibido" required placeholder="Ej: 50000.00">
+                                </div>
+                            </div>
+                        </form>
+
+                        <div class="alert text-center fw-bold mt-4" id="cambio-display-box" style="display: none;">
+                            <p class="mb-0">Cambio a Devolver:</p>
+                            <h4 class="mb-0" id="montoCambio"></h4>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="tarjeta-pane" role="tabpanel" aria-labelledby="tarjeta-tab" tabindex="0">
+                        <p class="text-muted small">El registro de la venta se procesará automáticamente al presionar 'Finalizar Transacción' si se completan los campos simulados.</p>
+                        <form id="formTarjetaSimulado">
+                            <div class="mb-3">
+                                <label for="tarjetaNumero" class="form-label">Número de Tarjeta (Ficticio)</label>
+                                <input type="text" class="form-control" id="tarjetaNumero" required placeholder="XXXX XXXX XXXX XXXX">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="fechaExp" class="form-label">Fecha Exp. (MM/AA)</label>
+                                    <input type="text" class="form-control" id="fechaExp" required placeholder="01/25">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="cvc" class="form-label">CVC</label>
+                                    <input type="text" class="form-control" id="cvc" required placeholder="123">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success fw-bold" id="btnConfirmarPago"><i class="bi bi-lock-fill"></i> Finalizar Transacción</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="csrf-header-name" th:value="${_csrf.headerName}" />
+<input type="hidden" id="csrf-token-value" th:value="${_csrf.token}" />
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // --- FUNCIÓN AUXILIAR PARA ABRIR EL PDF SIN BLOQUEOS (Se mantiene, aunque ya no se llama directamente) ---
+function openPdfInNewTab(ventaId) {
+    const url = `/api/ventas/factura/${ventaId}`;
+
+    // Crear un elemento 'a' temporal para simular un click directo del usuario
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+
+    // Disparar el click para abrir la ventana
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Declaraciones de Constantes (Se mantienen) ---
+    const selector = document.getElementById('producto-selector');
+    const cantidadInput = document.getElementById('cantidad');
+    const btnAgregar = document.getElementById('btn-agregar');
+    const tablaVenta = document.getElementById('lista-productos-venta');
+    const totalVentaDisplay = document.getElementById('total-venta');
+    const btnFinalizar = document.getElementById('btn-finalizar-venta');
+    const btnCancelar = document.getElementById('btn-cancelar-venta');
+    const subtotalDisplay = document.getElementById('subtotal-display');
+
+    const csrfHeaderName = document.getElementById('csrf-header-name').value;
+    const csrfTokenValue = document.getElementById('csrf-token-value').value;
+
+    // --- Elementos del Modal de Pago ---
+    const pagoModal = new bootstrap.Modal(document.getElementById('pagoModal'));
+    const montoTotalCobrarDisplay = document.getElementById('montoTotalCobrar');
+    const totalVentaValorInput = document.getElementById('totalVentaValor');
+    const btnConfirmarPago = document.getElementById('btnConfirmarPago');
+    const formEfectivo = document.getElementById('formEfectivo');
+    const formTarjeta = document.getElementById('formTarjetaSimulado');
+    const montoRecibidoInput = document.getElementById('montoRecibido');
+    const montoCambioDisplay = document.getElementById('montoCambio');
+    const cambioDisplayBox = document.getElementById('cambio-display-box');
+
+    let venta = [];
+
+    // --- Funciones de Totales y Renderizado (Se mantienen) ---
+    function actualizarTotal() {
+        const total = venta.reduce((sum, item) => sum + (item.precioUnitario * item.cantidad), 0);
+
+        totalVentaDisplay.textContent = `$${total.toFixed(2)}`;
+        subtotalDisplay.textContent = `$${total.toFixed(2)}`;
+
+        totalVentaValorInput.value = total.toFixed(2);
+
+        btnFinalizar.disabled = venta.length === 0;
+        return total;
+    }
+
+    function renderizarTabla() {
+        tablaVenta.innerHTML = '';
+        venta.forEach(item => {
+            const subtotal = item.precioUnitario * item.cantidad;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.productoNombre}</td>
+                <td>${item.cantidad}</td>
+                <td class="text-secondary">$${item.precioUnitario.toFixed(2)}</td>
+                <td class="fw-bold">$${subtotal.toFixed(2)}</td>
+                <td><button class="btn btn-sm btn-danger" data-id="${item.productoId}">&times;</button></td>
+            `;
+            tablaVenta.appendChild(row);
+        });
+        actualizarTotal();
+    }
+
+    // --- Lógica de Adición/Remoción de Productos (Se mantienen) ---
+    btnAgregar.addEventListener('click', () => {
+        const selectedOption = selector.options[selector.selectedIndex];
+        if (!selectedOption.value) return;
+
+        const productoId = parseInt(selectedOption.value);
+        const cantidad = parseInt(cantidadInput.value);
+        const maxStock = parseInt(selectedOption.dataset.stock);
+
+        if (cantidad <= 0 || isNaN(cantidad)) {
+             alert('La cantidad debe ser un número positivo.');
+             return;
+        }
+
+        if (cantidad > maxStock) {
+            alert('La cantidad solicitada supera el stock disponible.');
+            return;
+        }
+
+        const itemExistente = venta.find(item => item.productoId === productoId);
+        if (itemExistente) {
+            if (itemExistente.cantidad + cantidad > maxStock) {
+                 alert('La cantidad total en el carrito supera el stock disponible.');
+                 return;
+            }
+            itemExistente.cantidad += cantidad;
+        } else {
+            venta.push({
+                productoId: productoId,
+                productoNombre: selectedOption.text.split(' - ')[0],
+                cantidad: cantidad,
+                precioUnitario: parseFloat(selectedOption.dataset.precio)
+            });
+        }
+        renderizarTabla();
+        selector.value = '';
+        cantidadInput.value = 1;
+    });
+
+
+    tablaVenta.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+            const idToRemove = parseInt(e.target.dataset.id);
+            venta = venta.filter(item => item.productoId !== idToRemove);
+            renderizarTabla();
+        }
+    });
+
+    btnCancelar.addEventListener('click', () => {
+        if (confirm('¿Estás seguro de que quieres cancelar la venta? Se perderán todos los productos añadidos.')) {
+            venta = [];
+            renderizarTabla();
+        }
+    });
+
+    // --- Lógica de Cálculo de Cambio (Efectivo) (Se mantiene) ---
+    montoRecibidoInput.addEventListener('input', () => {
+        const totalVenta = parseFloat(totalVentaValorInput.value);
+        const montoRecibido = parseFloat(montoRecibidoInput.value) || 0;
+
+        const cambio = montoRecibido - totalVenta;
+
+        cambioDisplayBox.style.display = 'block';
+
+        if (montoRecibido >= totalVenta) {
+            montoCambioDisplay.textContent = `$${cambio.toFixed(2)}`;
+            cambioDisplayBox.classList.remove('alert-danger');
+            cambioDisplayBox.classList.add('alert-success');
+            cambioDisplayBox.classList.add('border-success');
+            cambioDisplayBox.classList.remove('border-danger');
+        } else {
+            montoCambioDisplay.textContent = `Faltan $${(-cambio).toFixed(2)}`;
+            cambioDisplayBox.classList.remove('alert-success');
+            cambioDisplayBox.classList.add('alert-danger');
+            cambioDisplayBox.classList.add('border-danger');
+            cambioDisplayBox.classList.remove('border-success');
+        }
+    });
+
+
+    // --- 1. Evento para ABRIR el Modal (Se mantiene) ---
+    btnFinalizar.addEventListener('click', () => {
+        if (venta.length === 0) {
+            alert('Debes añadir al menos un producto a la venta.');
+            return;
+        }
+
+        const totalTexto = totalVentaDisplay.textContent;
+        montoTotalCobrarDisplay.textContent = totalTexto;
+
+        pagoModal.show();
+    });
+
+
+    // --- 2. Evento para CONFIRMAR el Pago (Lógica de Redirección Corregida) ---
+    btnConfirmarPago.addEventListener('click', async () => {
+
+        const totalVenta = parseFloat(totalVentaValorInput.value);
+        const activeTabId = document.querySelector('#pagoTabs button.active').id;
+        let esPagoValido = false;
+        let metodoPagoFinal = null;
+
+        // --- VALIDACIÓN DEL MÉTODO DE PAGO ACTIVO (Se mantiene) ---
+        if (activeTabId === 'efectivo-tab') {
+            const montoRecibido = parseFloat(montoRecibidoInput.value) || 0;
+            if (montoRecibido <= 0 || montoRecibido < totalVenta) {
+                alert('El monto recibido es insuficiente o inválido.');
+                return;
+            }
+            esPagoValido = true;
+            metodoPagoFinal = 'EFECTIVO';
+
+        } else if (activeTabId === 'tarjeta-tab') {
+            if (!formTarjeta.checkValidity()) {
+                formTarjeta.reportValidity();
+                return;
+            }
+            esPagoValido = true;
+            metodoPagoFinal = 'TARJETA';
+        }
+
+        if (!esPagoValido) return;
+
+        // Deshabilita el botón mientras se procesa la solicitud
+        btnConfirmarPago.disabled = true;
+        btnConfirmarPago.textContent = 'Procesando...';
+
+        // --- PAYLOAD DE VENTA ---
+        const ventaPayload = {
+            clienteId: 1,
+            detalles: venta,
+            metodoPago: metodoPagoFinal
+        };
+
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        headers[csrfHeaderName] = csrfTokenValue;
+
+        // 🚀 LLAMADA FINAL AL BACKEND PARA REGISTRAR LA VENTA
+        try {
+            const response = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(ventaPayload)
+            });
+
+            if (response.ok) {
+                // --- 1. ÉXITO (Respuesta OK) ---
+                const nuevaVenta = await response.json();
+                const ventaId = nuevaVenta.id; // Obtenemos el ID de la venta
+
+                pagoModal.hide();
+                alert('¡Venta registrada con éxito! Redirigiendo al resumen.');
+
+                // 🔥 CORRECCIÓN CRÍTICA: Redirigir a la URL de la vista de resumen
+                window.location.href = `/vendedor/resumen-venta/${ventaId}`;
+                // La vista de resumen contiene el botón para la descarga de PDF
+
+            } else {
+                // --- 2. ERROR (Respuesta NO OK: 4xx, 5xx) ---
+                const errorText = await response.text();
+                let errorMessage = errorText;
+
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorText;
+                } catch (e) {
+                    errorMessage = errorText;
+                }
+
+                throw new Error(errorMessage);
+            }
+
+        } catch (error) {
+            pagoModal.hide();
+            console.error('Error al registrar la venta:', error);
+            alert(`Error de Transacción: ${error.message}`);
+
+        } finally {
+            btnConfirmarPago.disabled = false;
+            btnConfirmarPago.textContent = 'Finalizar Transacción';
+        }
+    });
+});
+</script>
+</body>
+</html>

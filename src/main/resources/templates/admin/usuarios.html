@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - El Yunque de Hierro</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base y Tipografía */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to right, #eceff1, #cfd8dc); /* Fondo suave */
+            margin: 0;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Botón Primario de Marca */
+        .btn-primary-custom {
+            background-color: #D97706;
+            border-color: #D97706;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-primary-custom:hover {
+            background-color: #B45309;
+            border-color: #B45309;
+            transform: translateY(-1px);
+        }
+
+        /* Estilos de Layout */
+        .app-wrapper { display: flex; min-height: 100vh; }
+        .main-content { flex-grow: 1; padding: 2.5rem 2rem; }
+        .display-6 {
+            color: #212529;
+            font-size: 2.5rem;
+        }
+        .display-6 i {
+            color: #0d6efd; /* Azul para foco en usuarios */
+            margin-right: 15px;
+            font-size: 2.2rem;
+        }
+
+        /* 🔥 Estilo de Tabla Auditiva y Profesional 🔥 */
+        .card-users {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15); /* Sombra mejorada */
+            overflow: hidden;
+        }
+        .table-custom th {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            background-color: #343a40 !important; /* Gris oscuro para profesionalismo */
+            color: #fff;
+            padding: 1rem 1.5rem;
+        }
+        .table-custom td {
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+        .table-custom tbody tr:hover {
+            background-color: #e9ecef; /* Resaltar al pasar el mouse */
+        }
+
+        /* Resaltado de Roles (Auditivo y Didáctico) */
+        .badge {
+            padding: 0.7em 1em; /* Más padding para que se vea más moderno */
+            font-size: 0.8em;
+            font-weight: 700;
+            border-radius: 50px; /* Borde más redondeado */
+            letter-spacing: 0.5px;
+        }
+        .bg-rol-admin { background-color: #dc3545 !important; color: #fff; } /* Rojo Fuerte: Máximo Riesgo/Acceso */
+        .bg-rol-vendedor { background-color: #ffc107 !important; color: #343a40 !important; } /* Amarillo/Naranja: Operacional */
+        .bg-rol-cliente { background-color: #0d6efd !important; color: #fff; } /* Azul Vivo: Acceso Limitado */
+
+        /* Estilos de Acción */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        /* Centrar la columna de Acciones */
+        .text-center-actions {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <div th:replace="~{admin/fragments/sidebar :: admin-sidebar}">
+    </div>
+
+    <div class="main-content">
+        <div class="container-fluid pt-5">
+
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <h1 class="display-6 fw-bold"><i class="bi bi-people-fill"></i> Gestión de Usuarios</h1>
+
+                <a th:href="@{/admin/usuarios/nuevo}" class="btn btn-lg btn-primary-custom">
+                    <i class="bi bi-person-plus-fill"></i> Crear Nuevo Usuario
+                </a>
+            </div>
+
+            <div class="alert alert-light border-start border-4 border-primary shadow-sm mb-4" role="alert">
+                <p class="mb-1 fw-bold"><i class="bi bi-shield-check"></i> Auditoría de Roles:</p>
+                <ul class="list-unstyled mb-0 row small">
+                    <li class="col-md-4"><span class="badge bg-rol-admin">ADMINISTRADOR</span>: Acceso Total.</li>
+                    <li class="col-md-4"><span class="badge bg-rol-vendedor">VENDEDOR</span>: Caja, Ventas, Inventario.</li>
+                    <li class="col-md-4"><span class="badge bg-rol-cliente">CLIENTE</span>: Compras Web y Perfil.</li>
+                </ul>
+            </div>
+
+            <div class="card card-users shadow-lg">
+                <div class="card-body p-0">
+                    <table class="table table-hover table-custom align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th style="width: 10%;">ID</th>
+                            <th style="width: 40%;">Nombre de Usuario / Correo</th>
+                            <th style="width: 25%;">Rol</th>
+                            <th style="width: 25%;" class="text-center">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="usuario : ${usuarios}">
+                            <td th:text="${usuario.id}">1</td>
+
+                            <td>
+                                <span class="fw-bold" th:text="${usuario.username ?: usuario.email}">[Nombre Usuario/Correo]</span>
+                            </td>
+
+                            <td>
+                                <span th:text="${usuario.rol.name()}"
+                                      th:classappend="${usuario.rol.name() == 'ADMINISTRADOR'} ? 'bg-rol-admin' :
+                                                     (${usuario.rol.name() == 'VENDEDOR'} ? 'bg-rol-vendedor' : 'bg-rol-cliente')"
+                                      class="badge">
+                                    Rol
+                                </span>
+                            </td>
+
+                            <td class="text-center-actions">
+                                <div class="action-btns justify-content-center">
+                                    <a th:href="@{/admin/usuarios/editar/{id}(id=${usuario.id})}" class="btn btn-sm btn-outline-primary" title="Editar Usuario">
+                                        <i class="bi bi-pencil-square"></i> Editar
+                                    </a>
+
+                                    <form th:action="@{/admin/usuarios/eliminar/{id}(id=${usuario.id})}" method="post" class="d-inline"
+                                          onsubmit="return confirm('⚠️ ADVERTENCIA: ¿Estás seguro de eliminar a este usuario? Esta acción es irreversible.');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar Permanentemente">
+                                            <i class="bi bi-trash3-fill"></i> Eliminar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

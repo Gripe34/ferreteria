@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Reportes de Ventas - El Yunque de Hierro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Estilos -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400&display=swap" rel="stylesheet">
+
+    <!-- Librería de Gráficas (Chart.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #f8f9fa; margin: 0; }
+        .table-admin th { font-weight: bold; }
+        .btn-success-export { background-color: #155724; border-color: #155724; color: white; }
+        .btn-success-export:hover { background-color: #0c431b; border-color: #0c431b; }
+        .grafica-container { height: 400px; width: 100%; } /* Contenedor para las gráficas */
+
+        /* Estilos del Dashboard */
+        .app-wrapper { display: flex; min-height: 100vh; }
+        .sidebar-fixed { position: sticky; top: 0; height: 100vh; z-index: 1000; }
+        .main-content { flex-grow: 1; padding: 20px 40px; }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <!-- 1. BARRA LATERAL (FRAGMENTO) -->
+    <div th:replace="~{admin/fragments/sidebar :: admin-sidebar}"></div>
+
+    <!-- 2. CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="container-fluid pt-5">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-6 fw-bold"><i class="bi bi-file-earmark-bar-graph"></i> Reportes de Ventas</h1>
+
+                <div>
+                    <a th:href="@{/api/reportes/exportar-ventas-excel}" class="btn btn-lg btn-success-export shadow-sm">
+                        <i class="bi bi-file-earmark-excel-fill"></i> Exportar a Excel
+                    </a>
+                </div>
+            </div>
+
+            <!-- 🚀 BLOQUE DE GRÁFICAS (4 Gráficas en 2 filas) 🚀 -->
+            <div class="row g-4 mb-5">
+
+                <!-- Fila 1 -->
+                <!-- Gráfica 1: Ganancia Total por Producto (Barras) -->
+                <div class="col-lg-6">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-header bg-primary text-white fw-bold"><i class="bi bi-currency-dollar"></i> Top Ganancias (Margen Bruto)</div>
+                        <div class="card-body">
+                            <div class="grafica-container mb-3">
+                                <canvas id="gananciaChart"></canvas>
+                            </div>
+                            <div id="auditoria-ganancia" class="alert alert-primary small mt-3">
+                                <i class="bi bi-lightbulb-fill"></i> Analizando Rentabilidad...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfica 2: Productos más Vendidos por Cantidad (Dona) -->
+                <div class="col-lg-6">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-header bg-info text-white fw-bold"><i class="bi bi-basket3"></i> Distribución de Unidades Vendidas</div>
+                        <div class="card-body">
+                            <div class="grafica-container mb-3">
+                                <canvas id="cantidadChart"></canvas>
+                            </div>
+                            <div id="auditoria-cantidad" class="alert alert-info small mt-3">
+                                <i class="bi bi-lightbulb-fill"></i> Analizando Volumen...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fila 2 (Nuevas Gráficas) -->
+                <!-- Gráfica 3: Rentabilidad por Categoría (Dona/Pastel) -->
+                <div class="col-lg-6">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-header bg-success text-white fw-bold"><i class="bi bi-tags"></i> Rentabilidad por Categoría</div>
+                        <div class="card-body">
+                            <div class="grafica-container">
+                                <canvas id="categoriaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfica 4: Tendencia de Ventas (Líneas) -->
+                <div class="col-lg-6">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-header bg-warning text-dark fw-bold"><i class="bi bi-graph-up"></i> Tendencia de Ventas (Mensual)</div>
+                        <div class="card-body">
+                            <div class="grafica-container">
+                                <canvas id="tendenciaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- ----------------------------------------------- -->
+
+
+            <div class="card shadow-lg">
+                <div class="card-header bg-dark text-white fw-bold"><i class="bi bi-journal-text"></i> Detalle de Ventas Registradas (Tabla)</div>
+                <div class="card-body p-0">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th>ID Venta</th>
+                            <th>Fecha</th>
+                            <th>Cliente / Vendedor</th>
+                            <th>N° de Productos</th>
+                            <th>Total</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(ventas)}">
+                            <td colspan="5" class="text-center text-muted py-4">Aún no se han registrado ventas.</td>
+                        </tr>
+                        <tr th:each="venta : ${ventas}">
+                            <td th:text="${venta.id}">1</td>
+                            <td th:text="${#temporals.format(venta.fecha, 'dd-MM-yyyy')}">02-10-2025</td>
+                            <td><span th:text="${venta.clienteUsername}">[Nombre de Cliente]</span></td>
+                            <td th:text="${#lists.size(venta.detalles)}">3</td>
+                            <td th:text="${#numbers.formatCurrency(venta.total)}" class="fw-bold text-success">$150.00</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CÓDIGO JAVASCRIPT PARA GRÁFICAS -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Ejecución de las 3 APIS necesarias
+        fetchTopProductos();
+        fetchRentabilidadCategoria();
+        fetchTendenciaVentas();
+    });
+
+    function fetchTopProductos() {
+        fetch('/api/reportes/ganancias-producto')
+            .then(response => response.json())
+            .then(data => {
+                data.sort((a, b) => b.gananciaTotal - a.gananciaTotal);
+                const labels = data.map(item => item.nombreProducto);
+                const ganancias = data.map(item => item.gananciaTotal);
+                const cantidades = data.map(item => item.cantidadVendida);
+
+                createGananciaChart(labels.slice(0, 8), ganancias.slice(0, 8));
+                createCantidadChart(labels.slice(0, 8), cantidades.slice(0, 8));
+
+                if (data.length > 0) {
+                    generarAuditoriaGanancia(data);
+                    generarAuditoriaCantidad(data);
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar top productos:', error);
+                document.getElementById('auditoria-ganancia').innerHTML = '<div class="alert alert-danger mb-0">Error de carga de datos.</div>';
+                document.getElementById('auditoria-cantidad').innerHTML = '<div class="alert alert-danger mb-0">Error de carga de datos.</div>';
+            });
+    }
+
+    function fetchRentabilidadCategoria() {
+        // ASUMIMOS que este endpoint existe para el cálculo de rentabilidad por categoría
+        fetch('/api/reportes/rentabilidad-categoria')
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.map(item => item.nombreCategoria);
+                const ganancias = data.map(item => item.gananciaTotal);
+                createCategoriaChart(labels, ganancias);
+            })
+            .catch(error => {
+                console.error('Error al cargar rentabilidad por categoría:', error);
+            });
+    }
+
+    function fetchTendenciaVentas() {
+        // ASUMIMOS que este endpoint existe para el cálculo de tendencia
+        fetch('/api/reportes/tendencia-ventas')
+            .then(response => response.json())
+            .then(data => {
+                // Asegurar orden por periodo si es necesario (el backend debería devolverlos ordenados)
+                const labels = data.map(item => item.periodo);
+                const totales = data.map(item => item.totalVenta);
+                createTendenciaChart(labels, totales);
+            })
+            .catch(error => {
+                console.error('Error al cargar tendencia de ventas:', error);
+            });
+    }
+
+    // --- FUNCIONES DE AUDITORÍA Y LÓGICA (Omitidas para no repetir) ---
+    function generarAuditoriaGanancia(data) {
+        const topProduct = data[0];
+        let mensaje = `<i class="bi bi-trophy-fill"></i> El producto más rentable es **${topProduct.nombreProducto}**, generando un total de **$${topProduct.gananciaTotal.toFixed(2)}**.`;
+        document.getElementById('auditoria-ganancia').innerHTML = mensaje;
+    }
+
+    function generarAuditoriaCantidad(data) {
+        const topProduct = data[0];
+        const secondProduct = data.length > 1 ? data[1] : null;
+        let mensaje = `<i class="bi bi-speedometer"></i> **${topProduct.nombreProducto}** es el artículo de mayor rotación con **${topProduct.cantidadVendida} unidades vendidas**.`;
+        if (secondProduct && (topProduct.cantidadVendida - secondProduct.cantidadVendida) > 5) {
+             mensaje += ` Hay una gran dependencia en este producto clave.`;
+        } else {
+             mensaje += ` El volumen de ventas está bien distribuido.`;
+        }
+        document.getElementById('auditoria-cantidad').innerHTML = mensaje;
+    }
+
+    // --- FUNCIONES DE DIBUJO DE GRÁFICAS ---
+
+    // Gráfica 1: Top Ganancias
+    function createGananciaChart(labels, data) {
+        new Chart(document.getElementById('gananciaChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{ label: 'Ganancia Total (€)', data: data, backgroundColor: 'rgba(25, 135, 84, 0.7)', borderWidth: 1 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: 'Top 8 Productos por Margen de Ganancia' } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Monto (€)' } } } }
+        });
+    }
+
+    // Gráfica 2: Distribución de Unidades
+    function createCantidadChart(labels, data) {
+        new Chart(document.getElementById('cantidadChart'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Unidades Vendidas',
+                    data: data,
+                    backgroundColor: ['#D97706', '#17a2b8', '#007bff', '#ffc107', '#28a745', '#dc3545', '#6f42c1', '#20c997'],
+                    hoverOffset: 8
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' }, title: { display: true, text: 'Distribución de Unidades Vendidas' } } }
+        });
+    }
+
+    // 🚀 NUEVA FUNCIÓN 3: Rentabilidad por Categoría
+    function createCategoriaChart(labels, data) {
+        new Chart(document.getElementById('categoriaChart'), {
+            type: 'pie', // Usamos pastel/pie para rentabilidad de categorías
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Ganancia Bruta',
+                    data: data,
+                    backgroundColor: [
+                        '#28a745', '#007bff', '#ffc107', '#dc3545', '#17a2b8', '#D97706'
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: 'Rentabilidad por Categoría' }
+                }
+            }
+        });
+    }
+
+    // 🚀 NUEVA FUNCIÓN 4: Tendencia de Ventas Mensuales
+    function createTendenciaChart(labels, data) {
+        new Chart(document.getElementById('tendenciaChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Total de Ventas (€)',
+                    data: data,
+                    borderColor: '#D97706', // Naranja
+                    backgroundColor: 'rgba(217, 119, 6, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Tendencia de Ingresos Mensuales' }
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Ingresos (€)' } }
+                }
+            }
+        });
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

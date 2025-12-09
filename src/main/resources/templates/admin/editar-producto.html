@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Editando Producto | Auditoría</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"> 
+
+    <style>
+        /* ---------------------------------------------------- */
+        /* 🚀 PALETA DE COLORES Y FONDOS */
+        /* ---------------------------------------------------- */
+        :root {
+            --color-primary-custom: #D97706; /* Naranja/Ámbar original */
+            --color-primary-hover: #B45309; 
+            --color-dark-bg: #1e3a5a; /* Azul marino oscuro para encabezados */
+            --color-success-light: #e8f5e9; /* Fondo muy claro verde */
+            --color-info-light: #e3f2fd; /* Fondo muy claro azul */
+            --color-success-vibrant: #1b5e20; /* Verde vibrante */
+            --color-info-vibrant: #0d47a1; /* Azul vibrante */
+            --color-warning-vibrant: #856404; /* Ámbar oscuro para cambios */
+            --color-negativo: #e63946; /* Rojo intenso para tendencias negativas */
+        }
+
+        /* Estilos del Dashboard (Ajustes de Estructura) */
+        body { font-family: 'Roboto', sans-serif; background-color: #e9ecef; margin: 0; }
+        .app-wrapper { display: flex; min-height: 100vh; }
+        .sidebar-fixed { position: sticky; top: 0; height: 100vh; z-index: 1000; }
+        .main-content { flex-grow: 1; padding: 20px 40px; } 
+        .text-nowrap { white-space: nowrap; }
+        .image-preview { max-width: 150px; max-height: 150px; margin-top: 10px; border: 1px solid #ccc; padding: 5px; border-radius: 5px; display: block; object-fit: cover; }
+        .btn-primary-custom { background-color: var(--color-primary-custom); border-color: var(--color-primary-custom); }
+        .btn-primary-custom:hover { background-color: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+
+        /* ---------------------------------------------------- */
+        /* 💎 TARJETAS DE MÉTRICAS (Auditoría y Ganancia) */
+        /* ---------------------------------------------------- */
+        .card-metric {
+            background: linear-gradient(135deg, #ffffff, #f1f3f5);
+            border-radius: 12px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .card-metric:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+        .dl-auditoria dt { font-weight: 500; color: #495057; font-size: 0.9rem; }
+        .dl-auditoria dd { margin-bottom: 0.5rem; font-weight: bold; color: var(--color-dark-bg); font-size: 1rem; }
+        .ganancia-margin-box {
+            background-color: var(--color-success-light);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+        }
+
+        /* ---------------------------------------------------- */
+        /* 📝 ESTILOS DEL FORMULARIO Y CARDS INTERACTIVAS */
+        /* ---------------------------------------------------- */
+        .card-header-custom { 
+            background-color: var(--color-dark-bg) !important; 
+            color: white !important; 
+            border-radius: 12px 12px 0 0 !important;
+            padding: 15px;
+        }
+        .card-header-entrada { background-color: var(--color-info-light); color: var(--color-info-vibrant); font-weight: bold; } 
+        .card-header-salida { background-color: var(--color-success-light); color: var(--color-success-vibrant); font-weight: bold; }
+        
+        /* ---------------------------------------------------- */
+        /* 📊 TABLA DE HISTORIAL DE AUDITORÍA (PERFECCIONADA) */
+        /* ---------------------------------------------------- */
+        .card-header-historial { 
+            background-color: #495057; 
+            color: white; 
+            padding: 15px;
+        }
+        .table-auditoria {
+            --bs-table-bg: #fff;
+        }
+        .table-auditoria th { 
+            font-size: 0.85rem; 
+            font-weight: 700; 
+            padding: 12px;
+            vertical-align: middle;
+            background-color: #f8f9fa; 
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table-auditoria td {
+            font-size: 0.9rem;
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+        .row-cambio { 
+            background-color: #fff3cd30;
+            border-left: 3px solid var(--color-warning-vibrant);
+        }
+        .trend-change-up { color: var(--color-success-vibrant); font-weight: bold; }
+        .trend-change-down { color: var(--color-negativo); font-weight: bold; }
+        .trend-no-change { color: #6c757d; }
+        .text-costo { color: var(--color-negativo) !important; }
+        
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <div th:replace="~{admin/fragments/sidebar :: admin-sidebar}">
+    </div>
+
+    <div class="main-content">
+        <div class="container-fluid pt-5">
+
+            <div th:if="${mensajeExito}" class="alert alert-success alert-dismissible fade show fw-bold shadow-sm" role="alert">
+                <i class="bi bi-check-circle-fill"></i> <span th:text="${mensajeExito}"></span> Sus cambios se han aplicado exitosamente y se verán reflejados en el historial de auditoría.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            <div th:if="${errorCritico}" class="alert alert-danger alert-dismissible fade show fw-bold shadow-sm" role="alert">
+                <i class="bi bi-exclamation-octagon-fill"></i> <span th:text="${errorCritico}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-6 fw-bold text-dark"><i class="bi bi-pencil-square"></i> Edición: <span th:text="${producto.nombre}"></span></h1>
+                <a th:href="@{/gestion-productos}" class="btn btn-outline-secondary me-2"><i class="bi bi-arrow-left-circle"></i> Volver a la Lista</a>
+            </div>
+
+            <div class="card card-metric shadow-sm mb-5 border-0" style="max-width: 900px; margin: 0 auto;">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-5 border-end">
+                            <h6 class="text-muted mb-3"><i class="bi bi-clock-history"></i> Tiempos Clave de Auditoría</h6>
+                            <dl class="row dl-auditoria mb-0">
+                                <dt class="col-sm-5"><i class="bi bi-calendar-check text-success"></i> Ingresado:</dt>
+                                <dd class="col-sm-7 text-nowrap" th:text="${#temporals.format(producto.fechaRegistro, 'dd/MM/yyyy HH:mm')}"></dd>
+
+                                <dt class="col-sm-5"><i class="bi bi-calendar-minus text-info"></i> Última Modificación:</dt>
+                                <dd class="col-sm-7 text-nowrap" th:text="${#temporals.format(producto.fechaModificacion, 'dd/MM/yyyy HH:mm')}"></dd>
+                            </dl>
+                        </div>
+
+                        <div class="col-md-7 text-center">
+                            <div class="ganancia-margin-box">
+                                <h5 class="mb-2 text-secondary fw-normal">Margen Bruto Proyectado (por unidad):</h5>
+                                <h3 th:with="costo=${producto.costo}, precio=${producto.precio}, margen=(${precio} - ${costo})"
+                                    class="fw-bolder mb-0"
+                                    th:classappend="${margen > 0} ? 'text-success' : 'text-costo'">
+                                    <i class="bi bi-piggy-bank-fill"></i>
+                                    <span th:text="${#numbers.formatCurrency(margen)}"></span>
+                                </h3>
+                                <small class="text-muted">P.V.P: <span th:text="${#numbers.formatCurrency(precio)}"></span> - Costo: <span th:text="${#numbers.formatCurrency(costo)}"></span></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-lg mb-5 border-0" style="max-width: 900px; margin: 0 auto;">
+                <div class="card-header card-header-custom"><h4><i class="bi bi-gear-fill"></i> Parámetros de Edición</h4></div>
+                <div class="card-body p-4">
+
+                    <form th:action="@{/gestion-productos/editar/{id}(id=${producto.id})}"
+                          th:object="${producto}"
+                          method="post"
+                          enctype="multipart/form-data">
+
+                        <input type="hidden" th:field="*{id}">
+                        <input type="hidden" th:field="*{proveedorId}">
+                        <input type="hidden" th:field="*{stock}">
+                        
+                        <div class="row g-4 mb-5 border-bottom pb-4">
+                            <div class="col-md-7">
+                                <label for="nombre" class="form-label fw-bold fs-5"><i class="bi bi-tag-fill"></i> Nombre del Producto</label>
+                                <input type="text" class="form-control form-control-lg" id="nombre" th:field="*{nombre}" required>
+                                <small class="form-text text-muted">Asegúrate de que el nombre sea preciso.</small>
+                            </div>
+
+                            <div class="col-md-5">
+                                <div class="card shadow-sm h-100">
+                                    <div class="card-header bg-light"><i class="bi bi-image"></i> **Gestión de Imagen**</div>
+                                    <div class="card-body d-flex flex-column">
+                                        
+                                        <div class="mb-3 text-center">
+                                            <label class="form-label fw-bold">Previsualización:</label>
+                                            <div th:if="${producto.imageUrl}">
+                                                <img th:src="@{${producto.imageUrl}}" alt="Imagen actual del producto" class="image-preview"/>
+                                            </div>
+                                            <div th:unless="${producto.imageUrl}">
+                                                <p class="text-muted small">No hay imagen.</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-auto">
+                                            <label for="imagenArchivo" class="form-label fw-bold small">Subir / Reemplazar</label>
+                                            <input type="file" class="form-control form-control-sm" id="imagenArchivo" name="imagenArchivo" accept="image/jpeg, image/png, image/webp">
+                                            <small class="form-text text-muted">Max 5MB (reemplaza la actual).</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="row g-4 mb-4">
+
+                            <div class="col-md-6">
+                                <div class="card h-100 border-info shadow-sm">
+                                    <div class="card-header card-header-entrada"><i class="bi bi-arrow-down-left-square"></i> **Datos de Adquisición (Entrada)**</div>
+                                    <div class="card-body">
+
+                                        <div class="mb-4">
+                                            <label for="currentProvider" class="form-label fw-bold"><i class="bi bi-truck"></i> Proveedor Actual</label>
+                                            <input type="text" id="currentProvider" class="form-control bg-light" th:value="${producto.proveedorNombre ?: 'No Asignado'}" readonly>
+                                            <small class="form-text text-muted">Proveedor asociado a este producto.</small>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label for="costo" class="form-label fw-bold"><i class="bi bi-currency-dollar text-costo"></i> Costo de Adquisición</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text text-costo">$</span>
+                                                <input type="number" class="form-control form-control-lg" id="costo" th:field="*{costo}" step="0.01" required>
+                                            </div>
+                                            <small class="form-text text-info">Valor pagado al proveedor por unidad.</small>
+                                        </div>
+
+                                        <div class="mb-1 p-2 border-top">
+                                            <label class="form-label fw-bold"><i class="bi bi-box-seam"></i> Stock Actual:</label>
+                                            <p class="fw-bold fs-4 mb-0" th:classappend="${producto.stock <= 10} ? 'text-costo' : 'text-primary'">
+                                                <span th:text="${producto.stock}">100</span> unidades.
+                                            </p>
+                                            <small class="form-text text-muted">El stock se ajusta desde la <a th:href="@{/gestion-productos}">vista principal</a>.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="card h-100 border-success shadow-sm">
+                                    <div class="card-header card-header-salida"><i class="bi bi-cash-stack"></i> **Datos de Venta (Salida)**</div>
+                                    <div class="card-body">
+
+                                        <div class="mb-4">
+                                            <label for="precio" class="form-label fw-bold"><i class="bi bi-currency-dollar text-success"></i> Precio de Venta (P.V.P)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text text-success">$</span>
+                                                <input type="number" class="form-control form-control-lg" id="precio" th:field="*{precio}" step="0.01" required>
+                                            </div>
+                                            <small class="form-text text-success">Precio final que paga el cliente.</small>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="categoriaId" class="form-label fw-bold"><i class="bi bi-folder-fill"></i> Categoría</label>
+                                            <select class="form-select form-select-lg" id="categoriaId" th:field="*{categoriaId}" required>
+                                                <option th:each="cat : ${categorias}" th:value="${cat.id}" th:text="${cat.nombre}"></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="mb-4">
+
+                        <div class="d-flex justify-content-end">
+                            <a th:href="@{/gestion-productos}" class="btn btn-secondary me-2 btn-lg">Cancelar</a>
+                            <button type="submit" class="btn btn-primary-custom btn-lg"><i class="bi bi-save"></i> Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-lg mt-5 border-0" style="max-width: 900px; margin: 0 auto;">
+                <div class="card-header card-header-historial">
+                    <h4 class="mb-0"><i class="bi bi-journal-check"></i> Historial de Auditoría (Precios y Stock)</h4>
+                </div>
+                <div class="card-body p-0">
+
+                    <div th:if="${not #lists.isEmpty(historialPrecios)}" class="table-responsive">
+                        <table class="table table-auditoria table-striped table-hover mb-0">
+                            <thead class="bg-light">
+                            <tr>
+                                <th style="width: 18%;">Fecha y Hora</th>
+                                <th style="width: 12%;">Usuario</th>
+                                <th style="width: 20%;">Stock</th>
+                                <th class="text-costo" style="width: 25%;">Costo</th>
+                                <th class="text-success" style="width: 25%;">Precio Venta</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="historia : ${historialPrecios}"
+                                th:with="stockChanged=${historia.stockAnterior != historia.stockNuevo},
+                                         costoChanged=${historia.costoAnterior != historia.costoNuevo},
+                                         precioChanged=${historia.precioAnterior != historia.precioNuevo}"
+                                th:classappend="${stockChanged or costoChanged or precioChanged} ? 'row-cambio' : ''">
+
+                                <td class="text-nowrap small text-muted">
+                                    <span th:text="${#temporals.format(historia.fechaCambio, 'dd/MM/yyyy HH:mm')}"></span>
+                                </td>
+
+                                <td class="small" th:text="${historia.usuarioUsername}">Admin</td>
+
+                                <td>
+                                    <span th:with="stockUp=${historia.stockNuevo > historia.stockAnterior}, stockDown=${historia.stockNuevo < historia.stockAnterior}"
+                                          th:classappend="${stockUp} ? 'trend-change-up' : (${stockDown} ? 'trend-change-down' : 'trend-no-change')">
+                                        
+                                        <i th:if="${stockUp}" class="bi bi-arrow-up-right"></i>
+                                        <i th:if="${stockDown}" class="bi bi-arrow-down-right"></i>
+                                        
+                                        <span th:text="${historia.stockAnterior}"></span> &rarr; <span class="fw-bold" th:classappend="${stockUp} ? 'text-success' : (${stockDown} ? 'text-costo' : 'text-muted')" th:text="${historia.stockNuevo}"></span>
+                                    </span>
+                                    <span th:unless="${stockChanged}" class="trend-no-change" th:text="${historia.stockNuevo}"></span>
+                                </td>
+
+                                <td>
+                                    <span th:with="costoUp=${historia.costoNuevo > historia.costoAnterior}, costoDown=${historia.costoNuevo < historia.costoAnterior}"
+                                          th:classappend="${costoUp} ? 'trend-change-up' : (${costoDown} ? 'trend-change-down' : 'trend-no-change')">
+                                        
+                                        <i th:if="${costoUp}" class="bi bi-arrow-up-right"></i>
+                                        <i th:if="${costoDown}" class="bi bi-arrow-down-right"></i>
+                                        
+                                        <span th:text="${#numbers.formatCurrency(historia.costoAnterior)}"></span> &rarr; <span class="fw-bold text-costo" th:text="${#numbers.formatCurrency(historia.costoNuevo)}"></span>
+                                    </span>
+                                    <span th:unless="${costoChanged}" class="trend-no-change" th:text="${#numbers.formatCurrency(historia.costoNuevo)}"></span>
+                                </td>
+
+                                <td>
+                                    <span th:with="precioUp=${historia.precioNuevo > historia.precioAnterior}, precioDown=${historia.precioNuevo < historia.precioAnterior}"
+                                          th:classappend="${precioUp} ? 'trend-change-up' : (${precioDown} ? 'trend-change-down' : 'trend-no-change')">
+                                        
+                                        <i th:if="${precioUp}" class="bi bi-arrow-up-right"></i>
+                                        <i th:if="${precioDown}" class="bi bi-arrow-down-right"></i>
+                                        
+                                        <span th:text="${#numbers.formatCurrency(historia.precioAnterior)}"></span> &rarr; <span class="fw-bold text-success" th:text="${#numbers.formatCurrency(historia.precioNuevo)}"></span>
+                                    </span>
+                                    <span th:unless="${precioChanged}" class="trend-no-change" th:text="${#numbers.formatCurrency(historia.precioNuevo)}"></span>
+                                </td>
+
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div th:if="${#lists.isEmpty(historialPrecios)}" class="p-4 text-center text-muted">
+                        <i class="bi bi-info-circle fs-5"></i> Aún no hay registros de auditoría de Stock o Precio para este producto.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

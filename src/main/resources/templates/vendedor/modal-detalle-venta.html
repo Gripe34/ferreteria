@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* Estilos Didácticos y de Flujo de Datos */
+        .header-detail { background: linear-gradient(to right, #4CAF50, #2E7D32); } /* Degradado Verde Oscuro */
+        .data-label { font-weight: 500; color: #6c757d; font-size: 0.9rem; }
+        .data-value { font-weight: 600; color: #212529; }
+        .data-total { color: #155724; } /* Verde para totales */
+        .badge-payment { font-size: 0.9em; padding: 0.5em 0.8em; }
+
+        /* Estilo de la Tabla */
+        .table-products th { background-color: #f1f1f1; color: #495057; font-weight: 600; }
+        .table-products td { font-size: 0.95rem; }
+        .table-products tbody tr:hover { background-color: #fafafa; }
+    </style>
+</head>
+<body>
+<div class="modal-header header-detail text-white">
+    <h5 class="modal-title" id="detalleVentaModalLabel">
+        <i class="bi bi-receipt-cutoff"></i> Detalle de Venta #<span th:text="${venta.id}"></span>
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body p-4">
+
+    <h3 class="mb-3 data-value">Resumen de la Transacción</h3>
+    <hr class="mb-4">
+
+    <div class="row">
+
+        <div class="col-md-6 border-end">
+            <p class="data-label mb-1">
+                <i class="bi bi-clock"></i> Fecha y Hora: <br>
+                <span th:text="${#temporals.format(venta.fechaRegistro, 'dd/MM/yyyy HH:mm:ss')}" class="data-value"></span>
+            </p>
+            <p class="data-label mb-1">
+                <i class="bi bi-person-circle"></i> Vendedor: <br>
+                <span th:text="${venta.vendedorNombre}" class="data-value"></span>
+            </p>
+            <p class="data-label mb-1">
+                <i class="bi bi-person"></i> Cliente: <br>
+                <span th:text="${venta.clienteNombre ?: 'Consumidor Final'}" class="data-value"></span>
+            </p>
+        </div>
+
+        <div class="col-md-6 ps-4">
+            <p class="data-label mb-3">
+                <i class="bi bi-wallet2"></i> Método de Pago:
+                <span class="badge badge-payment"
+                      th:classappend="${venta.metodoPago == 'TARJETA'} ? 'bg-primary' : 'bg-success'"
+                      th:text="${venta.metodoPago}">EFECTIVO</span>
+            </p>
+
+            <p class="data-label mb-3">
+                <i class="bi bi-currency-dollar"></i> **TOTAL FINAL PAGADO:** <span class="h4 fw-bolder data-total" th:text="${#numbers.formatCurrency(venta.total)}"></span>
+            </p>
+
+            <a th:href="@{/api/ventas/factura/{id}(id=${venta.id})}" target="_blank" class="btn btn-info btn-lg text-white shadow-sm">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Descargar Factura
+            </a>
+        </div>
+    </div>
+
+    <h3 class="mt-5 mb-3 data-value">Productos Vendidos</h3>
+    <hr>
+
+    <div th:if="${#lists.isEmpty(venta.detalles)}" class="alert alert-warning text-center">
+        No se encontraron detalles de productos para esta venta.
+    </div>
+
+    <div th:unless="${#lists.isEmpty(venta.detalles)}" class="table-responsive">
+        <table class="table table-sm table-striped table-products align-middle">
+            <thead class="table-light">
+            <tr>
+                <th style="width: 45%;">Producto</th>
+                <th style="width: 10%;" class="text-center">Cant.</th>
+                <th style="width: 20%;" class="text-end">Precio Unit.</th>
+                <th style="width: 25%;" class="text-end">Subtotal</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="detalle : ${venta.detalles}">
+                <td th:text="${detalle.productoNombre}"></td>
+                <td th:text="${detalle.cantidad}" class="text-center"></td>
+                <td class="text-end" th:text="${#numbers.formatCurrency(detalle.precioUnitario)}"></td>
+                <td class="text-end fw-bold"
+                    th:with="subtotal=${detalle.precioUnitario * detalle.cantidad}"
+                    th:text="${#numbers.formatCurrency(subtotal)}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+</div>
+</body>
+</html>

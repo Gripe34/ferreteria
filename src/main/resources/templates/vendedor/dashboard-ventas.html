@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Ventas - Ferretería</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ... (Estilos CSS existentes) ... */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(to right, #eceff1, #cfd8dc);
+            color: #343a40;
+            margin: 0;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+        }
+        .app-wrapper { display: flex; min-height: 100vh; }
+        .main-content {
+            flex-grow: 1;
+            padding: 2.5rem 2rem;
+            transition: all 0.3s ease-in-out;
+        }
+        .display-6 {
+            font-size: 2.8rem;
+            color: #212529;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .display-6 i {
+            color: #D97706;
+            margin-right: 15px;
+        }
+        .alert-total-general {
+            background: linear-gradient(to right, #4CAF50, #81C784);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 128, 0, 0.25);
+            padding: 2.5rem;
+            animation: fadeIn 1s ease-out;
+        }
+        .alert-total-general .alert-heading {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500;
+            color: #e0e0e0;
+            margin-bottom: 1rem;
+        }
+        .alert-total-general .h2 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+            animation: pulse 1.5s infinite alternate;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            border-bottom: none;
+            padding: 1.25rem 1.5rem;
+            font-size: 1.25rem;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-header i {
+            font-size: 1.5rem;
+        }
+        .card.border-warning .card-header {
+            background: linear-gradient(to right, #ffc107, #ffcd39);
+            color: #343a40;
+        }
+        .card.border-success .card-header {
+            background: linear-gradient(to right, #28a745, #4caf50);
+            color: #fff;
+        }
+        .card.border-primary .card-header {
+            background: linear-gradient(to right, #007bff, #42a5f5);
+            color: #fff;
+        }
+
+        .list-group-item {
+            border: none;
+            border-top: 1px solid #e9ecef;
+            padding: 0.8rem 1.5rem;
+        }
+        .list-group-item:first-child { border-top: none; }
+        .list-group-item span.text-success {
+            color: #198754 !important;
+            font-size: 1.05rem;
+            letter-spacing: 0.5px;
+        }
+        .list-group-item small {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .list-group-item:last-child {
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+        /* Estilos de botones de acción en la lista */
+        .venta-actions { display: flex; gap: 8px; align-items: center; }
+
+        .btn-return-admin {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-return-admin:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <div th:replace="admin/fragments/sidebar :: admin-sidebar">
+    </div>
+
+    <div class="main-content">
+        <div class="container-fluid pt-5">
+
+            <div class="d-flex justify-content-between align-items-center mb-5">
+                <h1 class="display-6"><i class="bi bi-bar-chart-line-fill"></i> Resumen de Ventas Clasificadas</h1>
+                <a th:href="@{/admin/index}" class="btn btn-return-admin"><i class="bi bi-arrow-left-circle-fill"></i> Volver al Panel</a>
+            </div>
+
+            <div class="alert alert-total-general mb-5" role="alert">
+                <h4 class="alert-heading">Total General de Ventas Registradas:</h4>
+                <p class="h2" th:text="${#numbers.formatCurrency(dashboard.totalGeneral)}">₡0.00</p>
+            </div>
+
+            <div class="row g-4">
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm border-warning">
+                        <div class="card-header bg-warning text-dark fw-bold">
+                            <i class="bi bi-globe"></i> Ventas Web (<span th:text="${#lists.size(dashboard.ventasWeb)}">0</span>)
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                    th:each="venta : ${dashboard.ventasWeb}">
+
+                                    <div>
+                                        <span>Venta #<span th:text="${venta.id}"></span></span>
+                                        <small class="d-block" th:text="${#temporals.format(venta.fechaRegistro, 'dd/MM HH:mm')}"></small>
+                                    </div>
+
+                                    <div class="venta-actions">
+                                        <span class="fw-bold text-success" th:text="${#numbers.formatCurrency(venta.total)}"></span>
+
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#detalleVentaModal"
+                                                th:attr="data-id=${venta.id}, data-url=@{/vendedor/detalle-venta/{id}(id=${venta.id})}"
+                                                title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+
+                                        <a th:href="@{/api/ventas/factura/{id}(id=${venta.id})}" target="_blank" class="btn btn-sm btn-outline-info" title="Descargar Factura">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                                <li class="list-group-item text-center text-muted fst-italic"
+                                    th:if="${#lists.isEmpty(dashboard.ventasWeb)}">
+                                    No hay ventas Web.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm border-success">
+                        <div class="card-header bg-success text-white fw-bold">
+                            <i class="bi bi-cash-stack"></i> Caja: Efectivo (<span th:text="${#lists.size(dashboard.ventasCajaEfectivo)}">0</span>)
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                    th:each="venta : ${dashboard.ventasCajaEfectivo}">
+
+                                    <div>
+                                        <span>Venta #<span th:text="${venta.id}"></span></span>
+                                        <small class="d-block" th:text="${#temporals.format(venta.fechaRegistro, 'dd/MM HH:mm')}"></small>
+                                    </div>
+
+                                    <div class="venta-actions">
+                                        <span class="fw-bold text-success" th:text="${#numbers.formatCurrency(venta.total)}"></span>
+
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#detalleVentaModal"
+                                                th:attr="data-id=${venta.id}, data-url=@{/vendedor/detalle-venta/{id}(id=${venta.id})}"
+                                                title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+
+                                        <a th:href="@{/api/ventas/factura/{id}(id=${venta.id})}" target="_blank" class="btn btn-sm btn-outline-info" title="Descargar Factura">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                                <li class="list-group-item text-center text-muted fst-italic"
+                                    th:if="${#lists.isEmpty(dashboard.ventasCajaEfectivo)}">
+                                    No hay ventas de Efectivo.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 shadow-sm border-primary">
+                        <div class="card-header bg-primary text-white fw-bold">
+                            <i class="bi bi-credit-card"></i> Caja: Tarjeta (<span th:text="${#lists.size(dashboard.ventasCajaTarjeta)}">0</span>)
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush small">
+                                <li class="list-group-item d-flex justify-content-between align-items-center"
+                                    th:each="venta : ${dashboard.ventasCajaTarjeta}">
+
+                                    <div>
+                                        <span>Venta #<span th:text="${venta.id}"></span> - <small th:text="${#temporals.format(venta.fechaRegistro, 'dd/MM HH:mm')}"></small></span>
+                                    </div>
+
+                                    <div class="venta-actions">
+                                        <span class="fw-bold text-success" th:text="${#numbers.formatCurrency(venta.total)}"></span>
+
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#detalleVentaModal"
+                                                th:attr="data-id=${venta.id}, data-url=@{/vendedor/detalle-venta/{id}(id=${venta.id})}"
+                                                title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+
+                                        <a th:href="@{/api/ventas/factura/{id}(id=${venta.id})}" target="_blank" class="btn btn-sm btn-outline-info" title="Descargar Factura">
+                                            <i class="bi bi-file-pdf"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                                <li class="list-group-item text-center text-muted fst-italic"
+                                    th:if="${#lists.isEmpty(dashboard.ventasCajaTarjeta)}">
+                                    No hay ventas con Tarjeta.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="detalleVentaModal" tabindex="-1" aria-labelledby="detalleVentaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const detalleModalElement = document.getElementById('detalleVentaModal');
+
+        detalleModalElement.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const ventaId = button.getAttribute('data-id');
+            const url = button.getAttribute('data-url');
+            const modalContent = detalleModalElement.querySelector('.modal-content');
+
+            // 1. Mostrar Spinner
+            modalContent.innerHTML = `
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Detalle de Venta #${ventaId}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p>Cargando detalles...</p>
+                </div>
+            `;
+
+            // 2. Realizar la petición HTTP para obtener el HTML del detalle
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al cargar el detalle: ' + response.statusText);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    // 3. Insertar el contenido HTML (modal-detalle-venta.html) en el modal
+                    modalContent.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error al cargar detalle:', error);
+                    modalContent.innerHTML = `
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Error de Carga</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body alert alert-danger">
+                            No se pudo cargar el detalle de la venta: ${error.message}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    `;
+                });
+        });
+    });
+</script>
+</body>
+</html>

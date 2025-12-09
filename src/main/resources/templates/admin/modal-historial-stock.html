@@ -1,0 +1,188 @@
+<div th:fragment="modalContent">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        /* ---------------------------------------------------- */
+        /* 🚀 PALETA DE COLORES Y VARIABLES */
+        /* ---------------------------------------------------- */
+        :root {
+            --color-positivo: #00b06b; /* Verde Esmeralda vibrante */
+            --color-negativo: #e63946; /* Rojo Intenso */
+            --color-header-bg: #1e3a5a; /* Azul Marino Oscuro */
+            --color-fondo-positivo: #eaf8f4; 
+            --color-fondo-negativo: #fef0f1; 
+            --color-stock-anterior: #94a3b8;
+        }
+
+        /* ---------------------------------------------------- */
+        /* 🖼️ ESTRUCTURA Y ENCABEZADO */
+        /* ---------------------------------------------------- */
+        .modal-dialog-xl { max-width: 95% !important; } 
+        
+        .modal-header.bg-dark-custom {
+            background-color: var(--color-header-bg) !important;
+            border-bottom: 4px solid var(--color-positivo); 
+            padding: 15px 20px;
+        }
+        .modal-title { font-weight: 700; font-size: 1.5rem; }
+        .modal-footer {
+             background-color: #f8f9fa;
+             border-top: 1px solid #dee2e6;
+        }
+
+        /* ---------------------------------------------------- */
+        /* 📊 ESTILOS DE LA TABLA */
+        /* ---------------------------------------------------- */
+        .table-historial { 
+            border-collapse: separate; 
+            border-spacing: 0 8px; /* Más espacio entre filas */
+        }
+
+        /* Encabezado */
+        .table-header-custom th { 
+            font-size: 0.9rem; 
+            font-weight: 700; 
+            background-color: var(--color-header-bg) !important;
+            color: #fff;
+            padding: 12px 10px;
+            border-bottom: none;
+        }
+        .table-historial td { 
+            font-size: 0.95rem; 
+            padding: 12px 10px; 
+            vertical-align: middle;
+            border-top: none;
+        }
+
+        /* 🟢 Fila Positiva (Entrada/Suma) */
+        .row-entrada-creative { 
+            background-color: var(--color-fondo-positivo) !important; 
+            border-left: 6px solid var(--color-positivo) !important; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+            transition: all 0.2s;
+        }
+        .row-entrada-creative:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 🔴 Fila Negativa (Salida/Resta) */
+        .row-salida-creative { 
+            background-color: var(--color-fondo-negativo) !important; 
+            border-left: 6px solid var(--color-negativo) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        .row-salida-creative:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 🔢 Estilos basados en la CANTIDAD */
+        .mov-positivo, .mov-negativo {
+             font-weight: 800 !important; 
+             font-size: 1.1rem !important; 
+        } 
+        .mov-positivo { color: var(--color-positivo) !important; } 
+        .mov-negativo { color: var(--color-negativo) !important; } 
+
+        /* 🕒 Stock Anterior (Discreto) */
+        .stock-anterior { 
+            color: var(--color-stock-anterior); 
+            font-size: 0.85rem; 
+            font-style: italic;
+        }
+        
+        /* 💡 Iconos de Movimiento (Flechas) */
+        .mov-icon { 
+            font-size: 1.5em; 
+            margin-left: 8px; 
+            vertical-align: -3px; 
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        /* ---------------------------------------------------- */
+        /* 🌟 ANIMACIONES LLAMATIVAS */
+        /* ---------------------------------------------------- */
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(0, 176, 107, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(0, 176, 107, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 176, 107, 0); }
+        }
+        .arrow-pulse { animation: pulse-green 1.5s infinite; border-radius: 50%; }
+
+        @keyframes drop-red {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(2px); }
+            100% { transform: translateY(0); }
+        }
+        .arrow-drop { animation: drop-red 1s ease-in-out infinite alternate; }
+
+        .cantidad-cell {
+            text-align: center;
+            vertical-align: middle;
+        }
+    </style>
+
+
+    <div class="modal-header bg-dark-custom text-white"> 
+        <h5 class="modal-title"><i class="bi bi-clock-history"></i> Trazabilidad Detallada de Stock: <span th:text="${producto.nombre}"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+
+    <div class="modal-body p-4">
+        <div th:if="${#lists.isEmpty(historialMovimientos)}" class="alert alert-warning text-center">
+            No se encontraron movimientos registrados para este producto.
+        </div>
+
+        <div th:unless="${#lists.isEmpty(historialMovimientos)}" class="table-responsive shadow-lg rounded"> 
+            <table class="table table-hover table-historial align-middle">
+                <thead class="table-header-custom"> 
+                <tr>
+                    <th style="width: 15%;">Fecha y Hora</th>
+                    <th style="width: 15%;">Tipo</th>
+                    <th style="width: 10%;">Cant.</th>
+                    <th style="width: 10%;">Stock Anterior</th>
+                    <th style="width: 15%;">Usuario</th>
+                    <th style="width: 35%;">Justificación / Origen</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="mov : ${historialMovimientos}"
+                    th:with="isNegative=${mov.tipoMovimiento.name() == 'AJUSTE_NEGATIVO' or mov.cantidad < 0}, 
+                             isPositive=${not #bools.isTrue(isNegative)}"
+                    th:classappend="${isPositive} ? 'row-entrada-creative' : 'row-salida-creative'"> 
+                    
+                    <td class="text-muted" th:text="${#temporals.format(mov.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+
+                    <td th:class="${isPositive} ? 'mov-positivo' : 'mov-negativo'">
+                        <span th:text="${mov.tipoMovimiento.name().replace('_', ' ')}"></span>
+                    </td>
+
+                    <td class="cantidad-cell" th:classappend="${isPositive} ? 'mov-positivo' : 'mov-negativo'">
+                        
+                        <span th:text="${isPositive} ? ('+' + mov.cantidad) : mov.cantidad"></span> 
+                        
+                        <i th:if="${isPositive}" class="bi bi-arrow-up-circle-fill mov-icon mov-positivo arrow-pulse" title="Aumento de Stock"></i>
+                        
+                        <i th:if="${isNegative}" class="bi bi-arrow-down-circle-fill mov-icon mov-negativo arrow-drop" title="Disminución de Stock"></i>
+                    </td>
+
+                    <td class="stock-anterior" th:text="${mov.stockAnterior}"></td>
+                    
+                    <td th:text="${mov.usuarioUsername ?: 'Sistema'}"></td>
+                    
+                    <td class="justificacion-col" th:text="${mov.justificacion ?: ('Doc. ID: ' + mov.documentoOrigenId)}"></td>
+                    
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-custom" data-bs-dismiss="modal">Cerrar</button>
+    </div>
+
+</div>

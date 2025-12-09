@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Registrar Nuevo Proveedor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root { --brand-orange: #D97706; --brand-dark: #1F2937; --brand-blue: #17a2b8;}
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f6f8; }
+        .btn-primary-custom { background-color: var(--brand-orange); border-color: var(--brand-orange); }
+        .btn-primary-custom:hover { background-color: #B45309; border-color: #B45309; }
+        .card-header-custom { background-color: var(--brand-dark) !important; color: white !important; }
+        .form-floating input.form-control { height: calc(3.5rem + 2px); line-height: 1.25; }
+        .app-wrapper { display: flex; min-height: 100vh; }
+        .main-content { flex-grow: 1; padding: 20px 40px; }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+    <!-- BARRA LATERAL (Necesaria para la estructura completa) -->
+    <div th:replace="~{admin/fragments/sidebar :: admin-sidebar}"></div>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-content">
+        <div class="container pt-5" style="max-width: 600px;">
+
+            <!-- Mensajes de Éxito/Error (si redirige aquí con un error) -->
+            <div th:if="${errorCritico}" class="alert alert-danger alert-dismissible fade show fw-bold shadow-sm" role="alert">
+                <i class="bi bi-exclamation-octagon-fill"></i> <span th:text="${errorCritico}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="display-6 fw-bold"><i class="bi bi-person-plus"></i> Registrar Nuevo Proveedor</h1>
+
+                <a th:href="@{/gestion-proveedores}" class="btn btn-secondary me-2">
+                    <i class="bi bi-arrow-left-circle"></i> Volver a Proveedores
+                </a>
+            </div>
+
+            <div class="card shadow-lg">
+                <div class="card-header card-header-custom"><h4>Datos del Contacto</h4></div>
+                <div class="card-body p-4">
+
+                    <!-- FORMULARIO DE CREACIÓN -->
+                    <form th:action="@{/gestion-proveedores/guardar}" method="post" th:object="${proveedorDTO}">
+
+                        <!-- Nombre de la Empresa -->
+                        <div class="form-floating mb-3">
+                            <input type="text" th:field="*{nombre}" id="nombre" class="form-control" placeholder="Nombre de la Empresa" required>
+                            <label for="nombre">Nombre de la Empresa</label>
+                        </div>
+
+                        <div class="row">
+                            <!-- Email -->
+                            <div class="col-md-6 mb-3">
+                                <div class="form-floating">
+                                    <input type="email" th:field="*{contactoEmail}" id="contactoEmail" class="form-control" placeholder="Email de Contacto" required>
+                                    <label for="contactoEmail">Email de Contacto</label>
+                                </div>
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-6 mb-4">
+                                <div class="form-floating">
+                                    <input type="tel" th:field="*{contactoTelefono}" id="contactoTelefono" class="form-control" placeholder="Teléfono de Contacto">
+                                    <label for="contactoTelefono">Teléfono de Contacto</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary-custom btn-lg">
+                                <i class="bi bi-save"></i> Guardar Proveedor
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

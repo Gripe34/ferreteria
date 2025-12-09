@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<div th:fragment="admin-sidebar" class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark sidebar-fixed" style="width: 250px;">
+
+    <!-- Encabezado del Panel -->
+    <a th:href="@{/admin/index}" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+        <i class="bi bi-hammer fs-4 me-2"></i>
+        <span class="fs-5 fw-bold">Panel Admin</span>
+    </a>
+    <hr>
+
+    <ul class="nav nav-pills flex-column mb-auto">
+
+        <!-- GRUPO 1: INICIO Y GESTIÓN DE INVENTARIO -->
+        <li class="nav-item">
+            <a th:href="@{/admin/index}" class="nav-link text-white" title="Inicio">
+                <i class="bi bi-house-door-fill me-2"></i> Dashboard
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/gestion-productos}" class="nav-link text-white" title="Productos e Inventario">
+                <i class="bi bi-box-seam me-2"></i> Productos e Inventario
+            </a>
+        </li>
+
+        <!-- 🆕 ENLACE AGREGADO: GESTIÓN DE PROVEEDORES 🆕 -->
+        <li>
+            <a th:href="@{/gestion-proveedores}" class="nav-link text-white" title="Proveedores">
+                <i class="bi bi-truck-front-fill me-2"></i> Gestión Proveedores
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/admin/categorias}" class="nav-link text-white" title="Categorías">
+                <i class="bi bi-tags-fill me-2"></i> Categorías
+            </a>
+        </li>
+
+        <hr>
+
+        <!-- GRUPO 2: AUDITORÍA Y USUARIOS -->
+
+        <li>
+            <a th:href="@{/inventario/trazabilidad}" class="nav-link text-white" title="Trazabilidad">
+                <i class="bi bi-graph-up me-2"></i> Trazabilidad Stock
+            </a>
+        </li>
+
+        <!-- 🚫 ENLACE ELIMINADO: Órdenes Web 🚫 -->
+
+        <li>
+            <a th:href="@{/admin/reportes}" class="nav-link text-white" title="Reportes">
+                <i class="bi bi-file-earmark-bar-graph me-2"></i> Reportes
+            </a>
+        </li>
+
+        <li>
+            <a th:href="@{/admin/usuarios}" class="nav-link text-white" title="Usuarios">
+                <i class="bi bi-people-fill me-2"></i> Usuarios
+            </a>
+        </li>
+
+    </ul>
+
+    <hr>
+    <div class="d-flex justify-content-between align-items-center">
+        <span class="text-white small me-2"><strong sec:authentication="name">Admin</strong></span>
+        <form th:action="@{/logout}" method="post" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i> Salir</button>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>
