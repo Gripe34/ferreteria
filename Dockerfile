@@ -1,5 +1,5 @@
 # 1. Fase de Build: Usamos Maven para compilar el código y generar el JAR
-FROM maven:3.9.5-eclipse-temurin-17 AS build
+FROM maven:3.9.5-eclipse-temurin-21 AS build
 
 # El WORKDIR dentro del contenedor será /app
 WORKDIR /app
