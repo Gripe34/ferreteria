@@ -15,7 +15,7 @@ COPY src /app/src
 RUN mvn clean install -DskipTests
 
 # 2. Fase de Ejecución: Usamos una imagen ligera de Java para ejecutar solo el JAR
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
 
 # El JAR compilado en la fase anterior se encuentra en /app/target/
 # Lo copiamos a la nueva imagen ligera de ejecución
